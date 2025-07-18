@@ -1,6 +1,6 @@
 import React from 'react';
 import JsxPreview from './JsxPreview';
-import code from './code/password-strength-checker-main';
+import code from './code/population-chart-main';
 
 const JsxPreviewDemo = () => {
   return (

@@ -20,13 +20,16 @@ export const dependencyMap = {
 
 	recharts: ['https://cdn.jsdelivr.net/npm/recharts@2.7.3/umd/Recharts.min.js'],
 
-	'framer-motion': ['https://unpkg.com/framer-motion/dist/framer-motion.js'],
+	'framer-motion': [
+		'https://cdn.jsdelivr.net/npm/motion@12.23.6/dist/motion.min.js',
+	],
 
 	'clsx': ['https://cdn.jsdelivr.net/npm/clsx@2.1.1/dist/clsx.min.js'],
 	// Add more dependencies as needed
 };
 
 export const checkLoadedDependencies = (dependencies) => {
+		console.log('☠️ ~ returndependencies.every ~ window.Motion:', window.Motion)
 	return dependencies.every((dep) => {
 		if (dep === 'lodash') return window._ !== undefined;
 		if (dep === 'react') return window.React !== undefined;
@@ -34,7 +37,7 @@ export const checkLoadedDependencies = (dependencies) => {
 		if (dep === 'chart.js') return window.Chart !== undefined;
 		if (dep === 'axios') return window.axios !== undefined;
 		if (dep === 'recharts') return window.Recharts !== undefined;
-		// if (dep === 'framer-motion') return window.Motion !== undefined;
+		if (dep === 'framer-motion') return window.Motion !== undefined || window.framerMotion !== undefined;
 		if (dep === 'clsx') return window.clsx !== undefined;
 		return true; // Default to true for unknown dependencies
 	});

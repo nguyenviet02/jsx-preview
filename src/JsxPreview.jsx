@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import { dependencyMap, checkLoadedDependencies } from './dependencyMap';
+import { motion, AnimatePresence } from 'motion/react';
 
 // Error Boundary component to catch errors in the rendered JSX
 class ErrorBoundary extends Component {
@@ -163,16 +164,8 @@ const JsxPreview = ({ jsxCode }) => {
           const ChartJsImports = window.Chart
             ? `
           // Import Chart.js components into local scope
-          const { BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = window.Chart;
+          const { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = window.Chart;
         	`
-            : '';
-
-          const FramerMotionImports = window.Motion
-            ? `
-					// Import Framer Motion components into local scope
-					  const { motion, AnimatePresence } = window.Motion;
-
-					`
             : '';
 
           // Create a function from the transformed code that returns the component
@@ -184,9 +177,10 @@ const JsxPreview = ({ jsxCode }) => {
             'useCallback',
             'useMemo',
             'useContext',
+            'motion',
+            'AnimatePresence',
             `
-            ${ChartJsImports}
-						${FramerMotionImports}
+            // ${ChartJsImports}
             ${transformedCode}
             return ${exportedComponentName};
             `
@@ -194,7 +188,7 @@ const JsxPreview = ({ jsxCode }) => {
 
           // Execute the code with React and hooks passed in
           try {
-            const DynamicComponent = executeCode(React, React.useState, React.useEffect, React.useRef, React.useCallback, React.useMemo, React.useContext, window.Motion);
+            const DynamicComponent = executeCode(React, React.useState, React.useEffect, React.useRef, React.useCallback, React.useMemo, React.useContext, motion, AnimatePresence);
 
             // Set the rendered component
             setRenderedComponent(() => DynamicComponent);
