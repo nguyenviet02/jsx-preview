@@ -12,7 +12,7 @@ export const dependencyMap = {
 		'https://cdn.jsdelivr.net/npm/@emotion/styled@11.11.0/dist/emotion-styled.umd.min.js',
 	],
 
-	'chart.js': ['https://cdn.jsdelivr.net/npm/chart.js@4.3.3/dist/chart.umd.min.js', 'https://cdn.jsdelivr.net/npm/moment@2.29.4/min/moment.min.js'],
+	'chart.js': ['https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js'],
 
 	axios: ['https://cdn.jsdelivr.net/npm/axios@1.4.0/dist/axios.min.js'],
 
@@ -20,7 +20,7 @@ export const dependencyMap = {
 
 	recharts: ['https://cdn.jsdelivr.net/npm/recharts@2.7.3/umd/Recharts.min.js'],
 
-	'framer-motion': ['https://cdn.jsdelivr.net/npm/framer-motion@11.12.0/dist/framer-motion.min.js'],
+	'framer-motion': ['https://unpkg.com/framer-motion/dist/framer-motion.js'],
 
 	'clsx': ['https://cdn.jsdelivr.net/npm/clsx@2.1.1/dist/clsx.min.js'],
 	// Add more dependencies as needed
@@ -31,11 +31,10 @@ export const checkLoadedDependencies = (dependencies) => {
 		if (dep === 'lodash') return window._ !== undefined;
 		if (dep === 'react') return window.React !== undefined;
 		if (dep === 'react-router-dom') return window.ReactRouterDOM !== undefined;
-		if (dep === '@mui/material') return window.MaterialUI !== undefined;
 		if (dep === 'chart.js') return window.Chart !== undefined;
 		if (dep === 'axios') return window.axios !== undefined;
 		if (dep === 'recharts') return window.Recharts !== undefined;
-		if (dep === 'framer-motion') return window.FramerMotion !== undefined;
+		// if (dep === 'framer-motion') return window.Motion !== undefined;
 		if (dep === 'clsx') return window.clsx !== undefined;
 		return true; // Default to true for unknown dependencies
 	});

@@ -135,46 +135,78 @@ const JsxPreview = ({ jsxCode }) => {
 
       // Function to render the component after dependencies are loaded
       const renderComponent = () => {
-        // Remove import statements from the JSX code
-        const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
+        try {
+          // Remove import statements from the JSX code
+          const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
 
-        // Handle export statements by capturing the component name and removing exports
-        let codeToTransform = codeWithoutImports;
-        let exportedComponentName = 'Component';
+          // Handle export statements by capturing the component name and removing exports
+          let codeToTransform = codeWithoutImports;
+          let exportedComponentName = 'Component';
 
-        // Find default export and extract component name
-        const defaultExportMatch = codeToTransform.match(/export\s+default\s+([A-Za-z0-9_]+)/);
-        if (defaultExportMatch && defaultExportMatch[1]) {
-          exportedComponentName = defaultExportMatch[1];
+          // Find default export and extract component name
+          const defaultExportMatch = codeToTransform.match(/export\s+default\s+([A-Za-z0-9_]+)/);
+          if (defaultExportMatch && defaultExportMatch[1]) {
+            exportedComponentName = defaultExportMatch[1];
+            console.log('Found exported component name:', exportedComponentName);
+          }
+
+          // Remove all export statements
+          codeToTransform = codeToTransform.replace(/export\s+default\s+[A-Za-z0-9_]+;?/g, '');
+          codeToTransform = codeToTransform.replace(/export\s+default\s+/g, '');
+          codeToTransform = codeToTransform.replace(/export\s+/g, '');
+
+          // Use Babel to transform JSX to JavaScript
+          const transformedCode = window.Babel.transform(codeToTransform, {
+            presets: ['react'],
+          }).code;
+
+          const ChartJsImports = window.Chart
+            ? `
+          // Import Chart.js components into local scope
+          const { BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = window.Chart;
+        	`
+            : '';
+
+          const FramerMotionImports = window.Motion
+            ? `
+					// Import Framer Motion components into local scope
+					  const { motion, AnimatePresence } = window.Motion;
+
+					`
+            : '';
+
+          // Create a function from the transformed code that returns the component
+          const executeCode = new Function(
+            'React',
+            'useState',
+            'useEffect',
+            'useRef',
+            'useCallback',
+            'useMemo',
+            'useContext',
+            `
+            ${ChartJsImports}
+						${FramerMotionImports}
+            ${transformedCode}
+            return ${exportedComponentName};
+            `
+          );
+
+          // Execute the code with React and hooks passed in
+          try {
+            const DynamicComponent = executeCode(React, React.useState, React.useEffect, React.useRef, React.useCallback, React.useMemo, React.useContext, window.Motion);
+
+            // Set the rendered component
+            setRenderedComponent(() => DynamicComponent);
+            setError(null);
+          } catch (execError) {
+            console.error('Error executing component code:', execError);
+            setError(`Error executing component: ${execError.toString()}`);
+          }
+        } catch (transformError) {
+          console.error('Error transforming JSX:', transformError);
+          setError(`Error transforming JSX: ${transformError.toString()}`);
         }
-
-        // Remove all export statements
-        codeToTransform = codeToTransform.replace(/export\s+default\s+[A-Za-z0-9_]+;?/g, '');
-        codeToTransform = codeToTransform.replace(/export\s+default\s+/g, '');
-        codeToTransform = codeToTransform.replace(/export\s+/g, '');
-
-        // Use Babel to transform JSX to JavaScript
-        const transformedCode = window.Babel.transform(codeToTransform, {
-          presets: ['react'],
-        }).code;
-
-        // Create a function from the transformed code that returns the component
-        const executeCode = new Function(
-          'React',
-          'useState',
-          'useEffect',
-          `
-          ${transformedCode}
-          return ${exportedComponentName};
-          `
-        );
-
-        // Execute the code with React and hooks passed in
-        const DynamicComponent = executeCode(React, React.useState, React.useEffect, window._);
-
-        // Set the rendered component
-        setRenderedComponent(() => DynamicComponent);
-        setError(null);
       };
 
       // Start checking for dependencies
@@ -208,3 +240,4 @@ const JsxPreview = ({ jsxCode }) => {
 };
 
 export default JsxPreview;
+

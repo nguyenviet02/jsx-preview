@@ -1,6 +1,6 @@
 import React from 'react';
 import JsxPreview from './JsxPreview';
-import code from './code3';
+import code from './code/password-strength-checker-main';
 
 const JsxPreviewDemo = () => {
   return (
@@ -14,4 +14,4 @@ const JsxPreviewDemo = () => {
   );
 };
 
-export default JsxPreviewDemo; 
+export default JsxPreviewDemo;
