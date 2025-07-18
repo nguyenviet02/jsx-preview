@@ -1,1 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Catamaran:wght@100..900&family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+
+
 @import "tailwindcss";
+
+html {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
