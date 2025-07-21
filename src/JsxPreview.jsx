@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { dependencyMap } from './dependencyMap';
 import ErrorBoundary from './ErrorBoundary';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup, LazyMotion, MotionConfig, Reorder } from 'framer-motion';
 import extractDependencies from './utils/extractDependencies';
 
 // Component for dynamically rendering JSX code
@@ -110,12 +110,17 @@ const JsxPreview = ({ jsxCode }) => {
         };
 
         //* Dependencies that loaded directly from the code not from the dependencyMap
-        const motionDependencies = dependencies.includes('framer-motion')
-          ? {
-              motion,
-              AnimatePresence,
-            }
-          : {};
+        const motionDependencies =
+          dependencies.includes('framer-motion') || dependencies.includes('motion')
+            ? {
+                motion,
+                AnimatePresence,
+                LayoutGroup,
+                LazyMotion,
+                MotionConfig,
+                Reorder,
+              }
+            : {};
 
         //* Dependencies that loaded from the dependencyMap
         const chartJSDependencies = dependencies.includes('chart.js')
@@ -198,7 +203,7 @@ const JsxPreview = ({ jsxCode }) => {
       {error ? (
         <div className="error-message p-4 bg-red-100 border border-red-300 text-red-700 rounded">
           <h3 className="font-bold">Error rendering JSX:</h3>
-          <pre>{error}</pre>
+          <pre className="text-wrap whitespace-break-spaces">{error}</pre>
         </div>
       ) : loadingDependencies ? (
         <div className="loading-dependencies p-4">
