@@ -3,7 +3,7 @@ import JsxPreview from './JsxPreview';
 import { useEffect } from 'react';
 
 const App = () => {
-  const expectedOrigin = 'https://jsx-preview.vercel.app/';
+  const expectedOrigin = 'https://jsx-preview.vercel.app';
 
   const [selectedCode, setSelectedCode] = useState('');
 
