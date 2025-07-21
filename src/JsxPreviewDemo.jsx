@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import JsxPreview from './JsxPreview';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -21,6 +21,8 @@ const JsxPreviewDemo = () => {
   const [selectedCode, setSelectedCode] = useState(PopulationChartMain);
   // State for the editor code when using custom code
   const [editorCode, setEditorCode] = useState(DefaultCode);
+  // Reference to the iframe element
+  const iframeRef = useRef(null);
 
   // Map of component names to their code
   const codeMap = {
@@ -33,6 +35,40 @@ const JsxPreviewDemo = () => {
     'quiz-blockchain-fundamentals': quizBlockchainFundamentals,
     'custom-code': editorCode,
   };
+
+  // Send code to iframe when editorCode changes or when iframe loads
+  useEffect(() => {
+    if (selectedOption !== 'custom-code') return;
+    const sendCodeToIframe = () => {
+      console.log('Sending code to iframe');
+      if (iframeRef.current && iframeRef.current.contentWindow) {
+        // Send the code to the iframe using postMessage
+        iframeRef.current.contentWindow.postMessage(
+          {
+            type: 'CODE_UPDATE',
+            code: editorCode,
+          },
+          'https://jsx-preview-iframe.vercel.app'
+        );
+      }
+    };
+
+    // If iframe is already loaded
+    if (iframeRef.current) {
+      sendCodeToIframe();
+    }
+
+    // Add event listener to send code when iframe loads
+    const iframe = iframeRef.current;
+    if (iframe) {
+      iframe.addEventListener('load', sendCodeToIframe);
+
+      // Cleanup function
+      return () => {
+        iframe.removeEventListener('load', sendCodeToIframe);
+      };
+    }
+  }, [editorCode, selectedOption]);
 
   // Handle selection change
   const handleSelectChange = (e) => {
@@ -92,7 +128,7 @@ const JsxPreviewDemo = () => {
               }}
             />
           </div>
-          <JsxPreview jsxCode={selectedCode} />
+          <iframe className="w-full h-full" src="https://jsx-preview-iframe.vercel.app" frameBorder="0" ref={iframeRef}></iframe>
         </div>
       ) : (
         <div className="mb-6">
