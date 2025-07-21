@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { dependencyMap, checkLoadedDependencies } from './dependencyMap';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
+import { dependencyMap } from './dependencyMap';
 import ErrorBoundary from './ErrorBoundary';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Component for dynamically rendering JSX code
 const JsxPreview = ({ jsxCode }) => {
   const [renderedComponent, setRenderedComponent] = useState(null);
   const [error, setError] = useState(null);
+  const [moduleCache, setModuleCache] = useState({});
 
   // Function to extract and load dependencies
-  const extractAndLoadDependencies = (code) => {
+  const extractAndLoadDependencies = async (code) => {
     // Extract import statements using regex
     const importRegex = /import\s+.*?from\s+['"](.*?)['"];?/g;
     let match;
@@ -40,8 +41,6 @@ const JsxPreview = ({ jsxCode }) => {
       }
     }
 
-    // Dependency map: library name -> CDN URLs for dependencies
-
     // Validate that all dependencies are supported
     for (const dep of dependencies) {
       if (!dependencyMap[dep]) {
@@ -49,129 +48,162 @@ const JsxPreview = ({ jsxCode }) => {
       }
     }
 
-    // Load each dependency that isn't already loaded
-    dependencies.forEach((dep) => {
-      const cdnUrls = dependencyMap[dep] || [];
+    // Load each dependency as ESM module
+    try {
+      for (const dep of dependencies) {
+        const url = dependencyMap[dep];
 
-      cdnUrls.forEach((cdnUrl) => {
-        // Create a unique ID based on the URL
-        const scriptId = `dependency-${cdnUrl.replace(/[^a-zA-Z0-9]/g, '-')}`;
-
-        // Check if script already exists
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.src = cdnUrl;
-          script.id = scriptId;
-
-          script.crossOrigin = 'anonymous';
-          document.head.appendChild(script);
-          console.log(`Added script for dependency: ${cdnUrl}`);
-        } else {
-          console.log(`Script already exists for: ${cdnUrl}`);
+        if (url && !moduleCache[url]) {
+          try {
+            const module = await import(/* @vite-ignore */ url);
+            moduleCache[url] = module;
+            console.log(`Loaded ESM module for dependency: ${url}`, module);
+          } catch (err) {
+            console.error(`Failed to load ESM module: ${url}`, err);
+            throw new Error(`Failed to load dependency: ${dep} (${err.message})`);
+          }
         }
-      });
-    });
+      }
 
-    return dependencies;
+      // Update the module cache state
+      setModuleCache({ ...moduleCache });
+
+      return dependencies;
+    } catch (error) {
+      console.error('Error loading ESM modules:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
     if (!jsxCode) return;
 
-    try {
-      // Extract and load dependencies before processing the code
-      const loadedDependencies = extractAndLoadDependencies(jsxCode);
-      console.log('Loaded dependencies:', loadedDependencies);
+    const renderComponent = async () => {
+      try {
+        // Extract and load dependencies before processing the code
+        const loadedDependencies = await extractAndLoadDependencies(jsxCode);
+        console.log('Loaded dependencies:', loadedDependencies);
 
-      // Wait for dependencies to load
-      const waitForDependencies = () => {
-        // Check if all dependencies are available
-        const allLoaded = checkLoadedDependencies(loadedDependencies);
+        // Remove import statements from the JSX code
+        const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
 
-        if (allLoaded) {
-          console.log('All dependencies loaded successfully');
-          renderComponent();
-        } else {
-          console.log('Waiting for dependencies to load...');
-          setTimeout(waitForDependencies, 200);
+        // Handle export statements by capturing the component name and removing exports
+        let codeToTransform = codeWithoutImports;
+        let exportedComponentName = 'Component';
+
+        // Find default export and extract component name
+        const defaultExportMatch = codeToTransform.match(/export\s+default\s+([A-Za-z0-9_]+)/);
+        if (defaultExportMatch && defaultExportMatch[1]) {
+          exportedComponentName = defaultExportMatch[1];
+          console.log('Found exported component name:', exportedComponentName);
         }
-      };
 
-      // Function to render the component after dependencies are loaded
-      const renderComponent = () => {
+        // Remove all export statements
+        codeToTransform = codeToTransform.replace(/export\s+default\s+[A-Za-z0-9_]+;?/g, '');
+        codeToTransform = codeToTransform.replace(/export\s+default\s+/g, '');
+        codeToTransform = codeToTransform.replace(/export\s+/g, '');
+
+        // Use Babel to transform JSX to JavaScript
+        const transformedCode = window.Babel.transform(codeToTransform, {
+          presets: ['react'],
+        }).code;
+
+        const { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = moduleCache[dependencyMap['chart.js']];
+        const _ = moduleCache[dependencyMap['lodash']];
+        const clsx = moduleCache[dependencyMap['clsx']];
+        const recharts = moduleCache[dependencyMap['recharts']];
+
+        const reactDependencies = {
+          React,
+          useState,
+          useEffect,
+          useRef,
+          useCallback,
+          useMemo,
+          useContext,
+        };
+
+        //* Dependencies that loaded directly from the code not from the dependencyMap
+        const motionDependencies = loadedDependencies.includes('framer-motion')
+          ? {
+              motion,
+              AnimatePresence,
+            }
+          : {};
+
+        //* Dependencies that loaded from the dependencyMap
+        const chartJSDependencies = loadedDependencies.includes('chart.js')
+          ? {
+              Chart,
+              BarElement,
+              CategoryScale,
+              LinearScale,
+              Tooltip,
+              Legend,
+              BarController,
+            }
+          : {};
+
+        const lodashDependencies = loadedDependencies.includes('lodash')
+          ? {
+              _,
+            }
+          : {};
+
+        const rechartsDependencies = loadedDependencies.includes('recharts')
+          ? {
+              recharts,
+            }
+          : {};
+
+        const clsxDependencies = loadedDependencies.includes('clsx')
+          ? {
+              clsx: clsx.default,
+            }
+          : {};
+
+        // Organize dependencies into logical groups
+        const dependencies = {
+          ...reactDependencies,
+          ...chartJSDependencies,
+          ...lodashDependencies,
+          ...rechartsDependencies,
+          ...motionDependencies,
+          ...clsxDependencies,
+        };
+
+        // Get dependency names and values as separate arrays
+        const dependencyNames = Object.keys(dependencies);
+        const dependencyValues = Object.values(dependencies);
+
+        // Create a function from the transformed code that returns the component
+        const executeCode = new Function(
+          ...dependencyNames,
+          `
+          ${transformedCode}
+          return ${exportedComponentName};
+          `
+        );
+
+        // Execute the code with all dependencies passed in
         try {
-          // Remove import statements from the JSX code
-          const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
+          const DynamicComponent = executeCode(...dependencyValues);
 
-          // Handle export statements by capturing the component name and removing exports
-          let codeToTransform = codeWithoutImports;
-          let exportedComponentName = 'Component';
-
-          // Find default export and extract component name
-          const defaultExportMatch = codeToTransform.match(/export\s+default\s+([A-Za-z0-9_]+)/);
-          if (defaultExportMatch && defaultExportMatch[1]) {
-            exportedComponentName = defaultExportMatch[1];
-            console.log('Found exported component name:', exportedComponentName);
-          }
-
-          // Remove all export statements
-          codeToTransform = codeToTransform.replace(/export\s+default\s+[A-Za-z0-9_]+;?/g, '');
-          codeToTransform = codeToTransform.replace(/export\s+default\s+/g, '');
-          codeToTransform = codeToTransform.replace(/export\s+/g, '');
-
-          // Use Babel to transform JSX to JavaScript
-          const transformedCode = window.Babel.transform(codeToTransform, {
-            presets: ['react'],
-          }).code;
-
-          const ChartJsImports = window.Chart
-            ? `
-          // Import Chart.js components into local scope
-          const { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = window.Chart;
-        	`
-            : '';
-
-          // Create a function from the transformed code that returns the component
-          const executeCode = new Function(
-            'React',
-            'useState',
-            'useEffect',
-            'useRef',
-            'useCallback',
-            'useMemo',
-            'useContext',
-            'motion',
-            'AnimatePresence',
-            `
-            // ${ChartJsImports}
-            ${transformedCode}
-            return ${exportedComponentName};
-            `
-          );
-
-          // Execute the code with React and hooks passed in
-          try {
-            const DynamicComponent = executeCode(React, React.useState, React.useEffect, React.useRef, React.useCallback, React.useMemo, React.useContext, motion, AnimatePresence);
-
-            // Set the rendered component
-            setRenderedComponent(() => DynamicComponent);
-            setError(null);
-          } catch (execError) {
-            console.error('Error executing component code:', execError);
-            setError(`Error executing component: ${execError.toString()}`);
-          }
-        } catch (transformError) {
-          console.error('Error transforming JSX:', transformError);
-          setError(`Error transforming JSX: ${transformError.toString()}`);
+          // Set the rendered component
+          setRenderedComponent(() => DynamicComponent);
+          setError(null);
+        } catch (execError) {
+          console.error('Error executing component code:', execError);
+          setError(`Error executing component: ${execError.toString()}`);
         }
-      };
+      } catch (transformError) {
+        console.error('Error transforming JSX:', transformError);
+        setError(`Error transforming JSX: ${transformError.toString()}`);
+      }
+    };
 
-      // Start checking for dependencies
-      waitForDependencies();
-    } catch (err) {
-      console.error('Error transforming or rendering JSX:', err);
-      setError(err.toString());
-    }
+    // Start the rendering process
+    renderComponent();
   }, [jsxCode]);
 
   // Render the dynamic component or error message
@@ -190,7 +222,7 @@ const JsxPreview = ({ jsxCode }) => {
           </div>
         </div>
       ) : (
-        <div className="loading p-4 text-gray-500">Waiting for JSX code...</div>
+        <div className="loading p-4 text-gray-500">Loading dependencies and rendering JSX...</div>
       )}
     </div>
   );
