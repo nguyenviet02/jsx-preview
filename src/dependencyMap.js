@@ -11,6 +11,8 @@ export const dependencyMap = {
 
 	'framer-motion': 'https://esm.sh/framer-motion@12.23.6',
 
+	'motion': 'https://esm.sh/motion@11.13.1',
+
 	'clsx': 'https://esm.sh/clsx@2.1.1',
 	
 	// Add more dependencies as needed
