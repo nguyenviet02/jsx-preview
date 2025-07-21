@@ -10,10 +10,9 @@ const App = () => {
   useEffect(() => {
     console.log('Get message !')
     window.addEventListener('message', (event) => {
-      console.log(event)
-      if (event.origin !== expectedOrigin) return;
       console.log('☠️ ~ window.addEventListener ~ event:', event)
-      setSelectedCode(event.data);
+      //if (event.origin !== expectedOrigin) return;
+      setSelectedCode(event.data?.code);
     });
   }, []);
 
