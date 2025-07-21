@@ -8,7 +8,7 @@ const App = () => {
   const [selectedCode, setSelectedCode] = useState('');
 
   useEffect(() => {
-    console.log(Get message !)
+    console.log('Get message !')
     window.addEventListener('message', (event) => {
       console.log(event)
       if (event.origin !== expectedOrigin) return;
