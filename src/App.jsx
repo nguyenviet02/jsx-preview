@@ -15,7 +15,8 @@ const App = () => {
         !expectedOrigin.includes(event.origin) ||
         event.data?.target !== "aicademy-previewer"
       )
-        return;
+      return;
+      console.log("☠️ ~ handleMessage ~ event:", event)
       setJsxCode(event.data?.code);
     };
 
