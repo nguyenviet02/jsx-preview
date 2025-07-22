@@ -16,7 +16,6 @@ const App = () => {
         event.data?.target !== "aicademy-previewer"
       )
       return;
-      console.log("☠️ ~ handleMessage ~ event:", event)
       setJsxCode(event.data?.code);
     };
 
