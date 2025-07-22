@@ -199,9 +199,9 @@ const JsxPreview = ({ jsxCode }) => {
 
   // Render the dynamic component or error message
   return (
-    <div className="jsx-preview">
+    <>
       {error ? (
-        <div className="error-message p-4 bg-red-100 border border-red-300 text-red-700 rounded">
+        <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded">
           <h3 className="font-bold">Error rendering JSX:</h3>
           <pre className="text-wrap whitespace-break-spaces">{error}</pre>
         </div>
@@ -216,16 +216,11 @@ const JsxPreview = ({ jsxCode }) => {
           </div>
         </div>
       ) : renderedComponent ? (
-        <div className="preview-container border p-4 rounded">
-          <h2 className="text-lg font-semibold mb-2">Preview:</h2>
-          <div className="component-wrapper">
-            <ErrorBoundary>{React.createElement(renderedComponent)}</ErrorBoundary>
-          </div>
-        </div>
+        <ErrorBoundary>{React.createElement(renderedComponent)}</ErrorBoundary>
       ) : (
         <div className="loading p-4 text-gray-500">Preparing to render JSX...</div>
       )}
-    </div>
+    </>
   );
 };
 

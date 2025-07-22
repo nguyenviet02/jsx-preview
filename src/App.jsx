@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
-import JsxPreview from './JsxPreview';
-import { useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
+import JsxPreview from "./JsxPreview";
 
 const App = () => {
-  const expectedOrigin = 'https://jsx-preview.vercel.app';
+  const expectedOrigin = useMemo(
+    () => import.meta.env.VITE_ORIGINS?.split(",") || [],
+    []
+  );
 
-  const [selectedCode, setSelectedCode] = useState('');
+  const [jsxCode, setJsxCode] = useState("");
 
   useEffect(() => {
-    window.addEventListener('message', (event) => {
-      if (event.origin !== expectedOrigin) return;
-      console.log('☠️ ~ window.addEventListener ~ event:', event)
-      setSelectedCode(event.data?.code);
-    });
-  }, []);
+    const handleMessage = (event) => {
+      if (
+        !expectedOrigin.includes(event.origin) ||
+        event.data?.target !== "aicademy-previewer"
+      )
+        return;
+      setJsxCode(event.data?.code);
+    };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <JsxPreview jsxCode={selectedCode} />
-    </div>
-  );
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [expectedOrigin]);
+
+  return <JsxPreview jsxCode={jsxCode} />;
 };
 
 export default App;
-
