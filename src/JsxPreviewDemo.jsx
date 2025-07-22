@@ -45,7 +45,8 @@ const JsxPreviewDemo = () => {
         // Send the code to the iframe using postMessage
         iframeRef.current.contentWindow.postMessage(
           {
-            type: 'CODE_UPDATE',
+            type: 'JSX_CODE',
+            target: 'aicademy-previewer',
             code: editorCode,
           },
           'https://jsx-preview-iframe.vercel.app'
