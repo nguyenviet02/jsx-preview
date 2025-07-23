@@ -189,6 +189,20 @@ const JsxPreview = ({ jsxCode }) => {
           }
         }
 
+        //* Handle mathjs
+        if (dependencies.includes('mathjs')) {
+          const mathjsComponents = extractSpecificImports(jsxCode, 'mathjs');
+          const mathjsModule = moduleCache[dependencyMap['mathjs']];
+
+          if (mathjsModule) {
+            mathjsComponents.forEach((component) => {
+              if (mathjsModule[component]) {
+                injectedDependencies[component] = mathjsModule[component];
+              }
+            });
+          }
+        }
+
         // Get dependency names and values as separate arrays
         const dependencyNames = Object.keys(injectedDependencies);
 
@@ -222,7 +236,7 @@ const JsxPreview = ({ jsxCode }) => {
 
     // Start the rendering process
     renderComponent();
-  }, [jsxCode, moduleCache, loadDependencies, extractSpecificImports]);
+  }, [jsxCode, moduleCache, loadDependencies]);
 
   // Render the dynamic component or error message
   return (

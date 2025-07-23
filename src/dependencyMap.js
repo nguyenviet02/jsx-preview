@@ -13,6 +13,8 @@ export const dependencyMap = {
 
 	'lucide-react': 'https://esm.sh/lucide-react@0.525.0',
 
+	'mathjs': 'https://esm.sh/mathjs@14.5.3',
+
 	// Add more dependencies as needed
 };
 
