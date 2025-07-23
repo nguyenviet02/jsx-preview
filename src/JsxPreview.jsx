@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } from 'react';
 import { dependencyMap } from './dependencyMap';
 import ErrorBoundary from './ErrorBoundary';
-import { motion, AnimatePresence, LayoutGroup, LazyMotion, MotionConfig, Reorder } from 'framer-motion';
 import extractDependencies from './utils/extractDependencies';
+import * as FramerMotionModule from 'framer-motion';
+import * as RechartsModule from 'recharts';
 
 // Component for dynamically rendering JSX code
 const JsxPreview = ({ jsxCode }) => {
@@ -43,6 +44,22 @@ const JsxPreview = ({ jsxCode }) => {
       setLoadingDependencies(false);
       throw error;
     }
+  }, []);
+
+  // Function to extract specific imports from a dependency
+  const extractSpecificImports = useCallback((jsxCode, dependency) => {
+    // Match imports like: import { A, B, C } from 'dependency';
+    const importRegex = new RegExp(`import\\s+{([^}]+)}\\s+from\\s+['"]${dependency}['"]`, 'g');
+    const matches = Array.from(jsxCode.matchAll(importRegex));
+
+    if (matches.length === 0) return [];
+
+    // Extract the imported components and clean up whitespace
+    const importedComponents = matches.flatMap((match) => {
+      return match[1].split(',').map((comp) => comp.trim());
+    });
+
+    return importedComponents;
   }, []);
 
   useEffect(() => {
@@ -94,11 +111,10 @@ const JsxPreview = ({ jsxCode }) => {
           presets: ['react'],
         }).code;
 
-        const { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } = moduleCache[dependencyMap['chart.js']] || {};
-        const _ = moduleCache[dependencyMap['lodash']] || {};
-        const clsx = moduleCache[dependencyMap['clsx']] || {};
-        const recharts = moduleCache[dependencyMap['recharts']] || {};
+        // Prepare injected dependencies
+        const injectedDependencies = {};
 
+        //* Add React dependencies
         const reactDependencies = {
           React,
           useState,
@@ -108,63 +124,75 @@ const JsxPreview = ({ jsxCode }) => {
           useMemo,
           useContext,
         };
+        Object.assign(injectedDependencies, reactDependencies);
 
-        //* Dependencies that loaded directly from the code not from the dependencyMap
-        const motionDependencies =
-          dependencies.includes('framer-motion') || dependencies.includes('motion')
-            ? {
-                motion,
-                AnimatePresence,
-                LayoutGroup,
-                LazyMotion,
-                MotionConfig,
-                Reorder,
+        //* Handle chart.js dynamic imports
+        if (dependencies.includes('chart.js')) {
+          const chartComponents = extractSpecificImports(jsxCode, 'chart.js');
+          console.log('☠️ ~ renderComponent ~ chartComponents:', chartComponents);
+          const chartModule = moduleCache[dependencyMap['chart.js']];
+
+          if (chartModule) {
+            chartComponents.forEach((component) => {
+              if (chartModule[component]) {
+                injectedDependencies[component] = chartModule[component];
               }
-            : {};
+            });
+          }
+        }
 
-        //* Dependencies that loaded from the dependencyMap
-        const chartJSDependencies = dependencies.includes('chart.js')
-          ? {
-              Chart,
-              BarElement,
-              CategoryScale,
-              LinearScale,
-              Tooltip,
-              Legend,
-              BarController,
+        //* Handle lodash
+        if (dependencies.includes('lodash')) {
+          injectedDependencies._ = moduleCache[dependencyMap['lodash']] || {};
+        }
+
+        //* Handle clsx
+        if (dependencies.includes('clsx')) {
+          const clsxModule = moduleCache[dependencyMap['clsx']];
+          injectedDependencies.clsx = clsxModule?.default || clsxModule;
+        }
+
+        //* Handle recharts
+        if (dependencies.includes('recharts')) {
+          const rechartsComponents = extractSpecificImports(jsxCode, 'recharts');
+
+          if (RechartsModule) {
+            // If specific components were imported
+            if (rechartsComponents.length > 0) {
+              rechartsComponents.forEach((component) => {
+                if (RechartsModule[component]) {
+                  injectedDependencies[component] = RechartsModule[component];
+                }
+              });
+            } else {
+              // Fall back to providing the entire module
+              injectedDependencies.recharts = RechartsModule;
             }
-          : {};
+          }
+        }
 
-        const lodashDependencies = dependencies.includes('lodash')
-          ? {
-              _,
-            }
-          : {};
+        //* Handle framer-motion
+        if (dependencies.includes('framer-motion') || dependencies.includes('motion')) {
+          const motionComponents = extractSpecificImports(jsxCode, 'framer-motion');
 
-        const rechartsDependencies = dependencies.includes('recharts')
-          ? {
-              recharts,
-            }
-          : {};
-
-        const clsxDependencies = dependencies.includes('clsx')
-          ? {
-              clsx: clsx.default,
-            }
-          : {};
-
-        // Organize dependencies into logical groups
-        const injectedDependencies = {
-          ...reactDependencies,
-          ...chartJSDependencies,
-          ...lodashDependencies,
-          ...rechartsDependencies,
-          ...motionDependencies,
-          ...clsxDependencies,
-        };
+          // If specific components were imported
+          if (motionComponents.length > 0) {
+            motionComponents.forEach((component) => {
+              if (FramerMotionModule[component]) {
+                injectedDependencies[component] = FramerMotionModule[component];
+              }
+            });
+          } else {
+            // Fall back to providing common motion components
+            Object.assign(injectedDependencies, {
+              ...FramerMotionModule,
+            });
+          }
+        }
 
         // Get dependency names and values as separate arrays
         const dependencyNames = Object.keys(injectedDependencies);
+
         const dependencyValues = Object.values(injectedDependencies);
 
         // Create a function from the transformed code that returns the component
@@ -195,7 +223,7 @@ const JsxPreview = ({ jsxCode }) => {
 
     // Start the rendering process
     renderComponent();
-  }, [jsxCode, moduleCache, loadDependencies]);
+  }, [jsxCode, moduleCache, loadDependencies, extractSpecificImports]);
 
   // Render the dynamic component or error message
   return (
