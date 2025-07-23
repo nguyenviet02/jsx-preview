@@ -49,7 +49,8 @@ const JsxPreview = ({ jsxCode }) => {
   // Function to extract specific imports from a dependency
   const extractSpecificImports = useCallback((jsxCode, dependency) => {
     // Match imports like: import { A, B, C } from 'dependency';
-    const importRegex = new RegExp(`import\\s+{([^}]+)}\\s+from\\s+['"]${dependency}['"]`, 'g');
+    // Using 's' flag to make . match newlines
+    const importRegex = new RegExp(`import\\s+{([^}]+)}\\s+from\\s+['"]${dependency}['"]`, 'gs');
     const matches = Array.from(jsxCode.matchAll(importRegex));
 
     if (matches.length === 0) return [];
@@ -87,8 +88,8 @@ const JsxPreview = ({ jsxCode }) => {
 
         console.log('Using dependencies:', dependencies);
 
-        // Remove import statements from the JSX code
-        const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
+        // Remove import statements from the JSX code - now with 's' flag to handle multi-line imports
+        const codeWithoutImports = jsxCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/gs, '');
 
         // Handle export statements by capturing the component name and removing exports
         let codeToTransform = codeWithoutImports;
