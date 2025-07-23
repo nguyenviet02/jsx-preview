@@ -7,15 +7,13 @@ export const dependencyMap = {
 
 	lodash: 'https://esm.sh/lodash@4.17.21',
 
-	recharts: 'https://esm.sh/recharts@2.7.3',
-
-	'framer-motion': 'https://esm.sh/framer-motion@12.23.6',
-
 	'motion': 'https://esm.sh/motion@11.13.1',
 
 	'clsx': 'https://esm.sh/clsx@2.1.1',
 
 	'lucide-react': 'https://esm.sh/lucide-react@0.525.0',
-	
+
 	// Add more dependencies as needed
 };
+
+export const internalDependencies = ['recharts', 'framer-motion'];
