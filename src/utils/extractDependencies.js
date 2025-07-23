@@ -1,9 +1,9 @@
-import { dependencyMap } from '../dependencyMap';
+import { dependencyMap, internalDependencies } from '../dependencyMap';
 
 // Function to extract dependencies from code
 const extractDependencies = (code) => {
-	// Extract import statements using regex
-	const importRegex = /import\s+.*?from\s+['"](.*?)['"];?/g;
+	// Extract import statements using regex with 's' flag to handle multi-line imports
+	const importRegex = /import\s+.*?from\s+['"](.*?)['"];?/gs;
 	let match;
 	const dependencies = [];
 
@@ -34,7 +34,7 @@ const extractDependencies = (code) => {
 
 	// Validate that all dependencies are supported
 	for (const dep of dependencies) {
-		if (!dependencyMap[dep]) {
+		if (!dependencyMap[dep] && !internalDependencies.includes(dep)) {
 			throw new Error(`The generated artifact uses libraries we don't support: ${dep}`);
 		}
 	}
