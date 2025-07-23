@@ -190,6 +190,20 @@ const JsxPreview = ({ jsxCode }) => {
           }
         }
 
+        //* Handle lucide-react
+        if (dependencies.includes('lucide-react')) {
+          const lucideComponents = extractSpecificImports(jsxCode, 'lucide-react');
+          const lucideModule = moduleCache[dependencyMap['lucide-react']];
+
+          if (lucideModule) {
+            lucideComponents.forEach((component) => {
+              if (lucideModule[component]) {
+                injectedDependencies[component] = lucideModule[component];
+              }
+            });
+          }
+        }
+
         // Get dependency names and values as separate arrays
         const dependencyNames = Object.keys(injectedDependencies);
 
