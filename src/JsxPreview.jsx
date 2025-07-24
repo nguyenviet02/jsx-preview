@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useContext } 
 import ErrorBoundary from './ErrorBoundary';
 import {extractDependencies, extractNamespaceImports, extractSpecificImports} from './utils/extractDependencies'
 
+// Import Shadcn UI components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 // Modules are statically imported directly into the bundle. Any libraries you want to support need to be imported here.
 import * as FramerMotionModule from 'framer-motion';
@@ -25,6 +30,10 @@ const JsxPreview = ({ jsxCode }) => {
     'clsx': clsxModule,
     'mathjs': mathjsModule,
     'react': ReactModule,
+    '@/components/ui/button': { Button },
+    '@/components/ui/card': { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle },
+    '@/components/ui/input': { Input },
+    '@/components/ui/label': { Label },
   }), []);
 
 
@@ -40,7 +49,7 @@ const JsxPreview = ({ jsxCode }) => {
         // Extract dependent libraries from code
         const dependencies = extractDependencies(jsxCode);
         for (const dep of dependencies) {
-          if (!staticallyImportedModules[dep]) {
+          if (!staticallyImportedModules[dep] && !dep.startsWith('@/components')) {
             throw new Error(`The generated artifact uses libraries we don't support: ${dep}`);
           }
         }
@@ -74,6 +83,16 @@ const JsxPreview = ({ jsxCode }) => {
           useCallback,
           useMemo,
           useContext,
+          // Add Shadcn UI components
+          Button,
+          Card,
+          CardContent,
+          CardDescription,
+          CardFooter,
+          CardHeader,
+          CardTitle,
+          Input,
+          Label,
         };
 
         // Handling namespace imports (import * as X from 'Y')

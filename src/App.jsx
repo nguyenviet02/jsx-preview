@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import JsxPreview from './JsxPreview';
+import code from './code/shadcn-ui-example';
 
 const App = () => {
   const expectedOrigin = useMemo(() => import.meta.env.VITE_ORIGINS?.split(',') || [], []);
@@ -18,7 +19,7 @@ const App = () => {
     };
   }, [expectedOrigin]);
 
-  return <JsxPreview jsxCode={jsxCode} />;
+  return <JsxPreview jsxCode={code} />;
 };
 
 export default App;
